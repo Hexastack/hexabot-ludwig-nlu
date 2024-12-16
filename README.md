@@ -49,7 +49,7 @@ Train your own model locally using the following command:
 ```bash
 ludwig experiment --config /src/config.yaml
                  --dataset /data/train.csv
-                 --output_directory /src/results
+                 --output_directory /results
 ```
 ### Inference 
 
@@ -107,7 +107,7 @@ docker compose -f docker-compose.predict.yml up
 Visualize key metrics for your trained model in a dockerized environment using the following command.
 
 ```bash
-`docker compose -f docker-compose.visualize.yml up
+docker compose -f docker-compose.visualize.yml up
 ```
 
 ### Serving
