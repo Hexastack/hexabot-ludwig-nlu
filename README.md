@@ -117,3 +117,44 @@ Set up a serve API in a dockerized environment using the following command. Plea
 ```bash
 docker compose -f docker-compose.serve.yml up
 ```
+## Uploading Models to HuggingFace
+
+You can upload your trained models to the Hugging Face Hub to make them publicly accessible or to share them with collaborators. The Hugging Face Command Line Interface (CLI) simplifies the process.
+
+### Setup
+
+Set up a **SSH** key for Huggingface first. For further instructions, please refer to https://huggingface.co/docs/hub/security-git-ssh 
+
+### Steps 
+
+#### Create a Repository 
+Create a new repository using HuggingFace's CLI. 
+
+```bash
+huggingface-cli repo create <repo-name>
+```
+#### Clone your repository 
+Clone your newly created repository using the following command 
+
+```bash
+git clone git@hf.co:<username>/<repo-name>.git
+cd <repo-name>
+```
+
+#### Track Large Files with Git LFS
+
+Set up **Git LFS** (Large File Storage) to manage large files (e.g., model weights).
+
+```bash
+git lfs install
+git lfs track "model/model_weights"
+```
+
+#### Push and Commit
+Copy all your model files to the cloned repository directory:
+
+```bash
+git add .
+git commit -m "Upload trained model with weights"
+git push
+```
