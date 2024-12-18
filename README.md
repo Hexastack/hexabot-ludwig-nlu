@@ -1,4 +1,4 @@
-# hexabot-ludwig-nlu
+# Hexabot NLU Engine using Ludwig 
 ## Overview
 This repository contains a **Natural Language Understanding (NLU)** engine developed using **Ludwig AI**, a high-level, declarative machine learning framework. Ludwig streamlines the process of training and serving machine learning models, enabling rapid prototyping and development without requiring extensive programming skills. For more details, please refer to https://ludwig.ai/latest/. 
 
