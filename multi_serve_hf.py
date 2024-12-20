@@ -193,14 +193,13 @@ def server(models, allowed_origins=None):
             form = await request.form()
             model_names = form.get("model")  # Single model or list of models
             model_names = model_names.split(",") if model_names else None
-            files = []
+            entry, files = convert_input(form, None)  # Input compatible with all models
         except Exception:
             logger.exception("Failed to parse predict form")
             return NumpyJSONResponse(COULD_NOT_RUN_INFERENCE_ERROR, status_code=500)
 
         async def predict_by_model(model_name: str, model: LudwigModel) -> dict:
             try:
-                entry, files = convert_input(form, model.model.input_features)  # Input compatible with all models
                 input_features = {f[COLUMN] for f in model.config["input_features"]}
                 if (entry.keys() & input_features) != input_features:
                     missing_features = set(input_features) - set(entry.keys())
