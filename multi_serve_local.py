@@ -60,9 +60,7 @@ def server(models, allowed_origins=None):
         try:
             # Parse form data
             form = await request.form()
-            print("FORM ", form)
             model_names = form.get("model")  # Single model or list of models
-            print(" ALL ", model_names)
             model_names = model_names.split(",") if model_names else None
             files=[]
         except Exception:
@@ -115,7 +113,6 @@ def server(models, allowed_origins=None):
                 target_models = models
 
             # Run 
-            print("TARGET MODELS ", target_models)
             tasks = [predict_by_model(name, model) for name, model in target_models.items()]
             results = await asyncio.gather(*tasks)
             responses = {result["model"]: result["response"] for result in results}
