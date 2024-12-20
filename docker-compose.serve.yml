@@ -20,4 +20,3 @@ services:
       - "${PORT}:${PORT}" 
 volumes:
   nlu-data:
-  
