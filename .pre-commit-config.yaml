@@ -1,0 +1,66 @@
+# Apply to all files without committing:
+#   pre-commit run --all-files
+# Apply to changed files:
+#   pre-commit run
+# Update this file:
+#   pre-commit autoupdate
+# Run a specific hook:
+#   pre-commit run <hook id>
+
+ci:
+  autofix_prs: true
+  autoupdate_commit_msg: "[pre-commit.ci] pre-commit suggestions"
+  autoupdate_schedule: weekly
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-ast
+        files: \.py$  # Restrict to .py files only
+      - id: check-byte-order-marker
+        files: \.py$  # Restrict to .py files only
+      - id: check-case-conflict
+        files: \.py$  # Restrict to .py files only
+      - id: check-toml
+      - id: check-yaml
+      - id: debug-statements
+        files: \.py$  # Restrict to .py files only
+      - id: detect-private-key
+      - id: end-of-file-fixer
+        files: \.py$  # Restrict to .py files only
+      - id: trailing-whitespace
+        files: \.py$  # Restrict to .py files only
+      - id: mixed-line-ending
+        files: \.py$  # Restrict to .py files only
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.19.1
+    hooks:
+      - id: pyupgrade
+        args: [--py36-plus]
+        files: \.py$  # Restrict to .py files only
+  - repo: https://github.com/pre-commit/mirrors-isort
+    rev: v5.10.1
+    hooks:
+      - id: isort
+        files: \.py$  # Restrict to .py files only
+        name: Format imports
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.2.0
+    hooks:
+      - id: flake8
+        files: \.py$  # Restrict to .py files only
+        args: ['--config', '.flake8'] 
+  # black for automatic code formatting
+  - repo: https://github.com/psf/black
+    rev: 25.1.0
+    hooks:
+      - id: black
+        files: \.py$
+        language_version: python3
+        name: Format code
+  - repo: https://github.com/yoheimuta/protolint
+    rev: v0.53.0
+    hooks:
+      - id: protolint
+        files: \.proto$  # Leave protolint for .proto files only

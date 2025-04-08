@@ -1,0 +1,6 @@
+[flake8]
+max-line-length = 120
+exclude = venv, .tox, *.egg, *_pb2.py, build, temp,
+select = E, W, F
+doctests = true
+ignore = E731, W503, E203, E231, E241, E221, E225, E226, E271, E275
