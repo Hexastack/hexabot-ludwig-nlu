@@ -6,22 +6,19 @@ import logging
 import os
 import sys
 import tempfile
-from typing import Dict, Optional, Tuple, Union, List
+from typing import Dict, List, Optional, Tuple, Union
 
 import pandas as pd
 import torch
-from torchvision.io import decode_image
-
+from huggingface_hub import login, snapshot_download
 from ludwig.api import LudwigModel
 from ludwig.constants import AUDIO, COLUMN
 from ludwig.contrib import add_contrib_callback_args
 from ludwig.globals import LUDWIG_VERSION
 from ludwig.utils.print_utils import get_logging_level_registry, print_ludwig
 from ludwig.utils.server_utils import NumpyJSONResponse
-from ludwig.backend import Backend
-from ludwig.callbacks import Callback
+from torchvision.io import decode_image
 
-from huggingface_hub import snapshot_download, login
 logger = logging.getLogger(__name__)
 
 try:
@@ -53,52 +50,51 @@ HF_AUTH_TOKEN = os.getenv("HF_AUTH_TOKEN")
 if HF_AUTH_TOKEN:
     login(token=HF_AUTH_TOKEN)
 
-def validate_and_get_project_name(repo_name:str) -> str:
+
+def validate_and_get_project_name(repo_name: str) -> str:
     """
+
     Validate a HuggingFace repository name and return the project name.
-    
+
     Parameters:
         repo_name (str): The repository name in the format 'Owner/ProjectName'.
-        
+
     Returns:
         str: The project name if the repo_name is valid.
-        
+
     Raises:
         ValueError: If the repo_name is not in the correct format.
     """
     # Check if the repo name contains exactly one '/'
-    if repo_name.count('/') != 1:
+    if repo_name.count("/") != 1:
         raise ValueError("Invalid repository name format. It must be in 'Owner/ProjectName' format.")
-    
+
     # Split the repository name into owner and project name
-    owner, project_name = repo_name.split('/')
-    
+    owner, project_name = repo_name.split("/")
+
     # Validate that both owner and project name are non-empty
     if not owner or not project_name:
         raise ValueError("Invalid repository name. Both owner and project name must be non-empty.")
-    
+
     # Return the project name if the validation is successful
     return project_name
 
+
 def process_repo_name(repo_name: str, save_dir: Optional[str]) -> Tuple[str, str, str]:
     if repo_name is not None:
-            project_name = validate_and_get_project_name(repo_name)
-            repo_dir = os.path.join("repos", project_name)
-            if save_dir is not None:
-                save_dir = os.path.join("repos", project_name, save_dir)
-            else:
-                save_dir = os.path.join("repos", project_name)
+        project_name = validate_and_get_project_name(repo_name)
+        repo_dir = os.path.join("repos", project_name)
+        if save_dir is not None:
+            save_dir = os.path.join("repos", project_name, save_dir)
+        else:
+            save_dir = os.path.join("repos", project_name)
     return repo_name, repo_dir, save_dir
-     
 
-def download_model_from_huggingface(
-    repo_id: str,
-    repo_dir: str,
-    force_download: bool = True
-) -> None:
+
+def download_model_from_huggingface(repo_id: str, repo_dir: str, force_download: bool = True) -> None:
     """
     Download the model from Hugging Face if not already present in the local directory.
-    
+
     Args:
     - repo_id: Hugging Face repository ID of the model.
     - repo_dir: Local directory to store the downloaded model.
@@ -108,15 +104,10 @@ def download_model_from_huggingface(
     if not os.path.isdir(repo_dir) or force_download:
         # Create the repository directory if it doesn't exist
         os.makedirs(repo_dir, exist_ok=True)
-        
+
         # Download the model from Hugging Face
         try:
-            snapshot_download(
-                repo_id=repo_id,
-                force_download=force_download,
-                local_dir=repo_dir,
-                repo_type="model"
-            )
+            snapshot_download(repo_id=repo_id, force_download=force_download, local_dir=repo_dir, repo_type="model")
         except Exception as e:
             logging.warning(f"Failed to download the model from hugging_face: {e}")
 
@@ -135,7 +126,7 @@ def load_model(
 ) -> Optional[LudwigModel]:
     """
     Load a pretrained model from the specified directory, or download it from Hugging Face if necessary.
-    
+
     This function first checks if the model is available locally, and if not,
     it downloads it from the Hugging Face Hub. It then loads the model using Ludwig's
     `LudwigModel.load()` method, which handles restoring the model's weights, config,
@@ -170,12 +161,13 @@ def load_model(
             gpu_memory_limit=gpu_memory_limit,
             allow_parallel_threads=allow_parallel_threads,
             callbacks=callbacks,
-            from_checkpoint=from_checkpoint
+            from_checkpoint=from_checkpoint,
         )
         return ludwig_model
     except Exception as e:
         logging.warning(f"Failed to load the model: {e}")
         return None
+
 
 def server(models, allowed_origins=None):
     middleware = [Middleware(CORSMiddleware, allow_origins=allowed_origins)] if allowed_origins else None
@@ -184,8 +176,7 @@ def server(models, allowed_origins=None):
     @app.get("/")
     def check_health():
         return NumpyJSONResponse({"message": "Ludwig server is up", "models": list(models.keys())})
-        
-    
+
     @app.post("/predict")
     async def predict(request: Request):
         try:
@@ -239,11 +230,11 @@ def server(models, allowed_origins=None):
                         status_code=400,
                     )
                 target_models = {name: models[name] for name in model_names}
-            else:  
+            else:
                 # Predict for all models if no specific model(s) are provided
                 target_models = models
 
-            # Run 
+            # Run
             tasks = [predict_by_model(name, model) for name, model in target_models.items()]
             results = await asyncio.gather(*tasks)
             responses = {result["model"]: result["response"] for result in results}
@@ -262,15 +253,15 @@ def server(models, allowed_origins=None):
             form = await request.form()
             model_names = form.get("model")  # Single model or list of models
             model_names = model_names.split(",") if model_names else None
-            files=[]
-           
+            files = []
+
         except Exception:
             logger.exception("Failed to parse batch_predict form")
             return NumpyJSONResponse(COULD_NOT_RUN_INFERENCE_ERROR, status_code=500)
 
-        async def batch_predict_by_model(model_name:str , model: LudwigModel) -> dict:
+        async def batch_predict_by_model(model_name: str, model: LudwigModel) -> dict:
             try:
-                data, files = convert_batch_input(form, model.model.input_features) 
+                data, files = convert_batch_input(form, model.model.input_features)
                 data_df = pd.DataFrame.from_records(data["data"], index=data.get("index"), columns=data["columns"])
                 input_features = {f[COLUMN] for f in model.config["input_features"]}
 
@@ -325,7 +316,9 @@ def server(models, allowed_origins=None):
         finally:
             for f in files:
                 os.remove(f.name)
+
     return app
+
 
 def _write_file(v, files):
     # Convert UploadFile to a NamedTemporaryFile to ensure it's on the disk
@@ -382,9 +375,11 @@ def convert_batch_input(form, input_features):
 
     return data, files
 
+
 async def are_models_loaded(models: Dict[str, LudwigModel]) -> bool:
     # Implement a check to verify all models are fully loaded
     return all(model is not None for model in models.values())
+
 
 def run_server(
     model_paths: dict,  # Dictionary of model IDs to paths
@@ -397,13 +392,13 @@ def run_server(
     # If model_paths is a string, convert it to a dictionary
     if isinstance(model_paths, str):
         model_paths = json.loads(model_paths)
-    
+
     models = {}
     for model_name, repo_id in model_paths.items():
         if mode == "huggingface":
             repo_id, repo_dir, save_dir = process_repo_name(repo_id, "model")
             models[model_name] = load_model(save_dir, repo_dir, repo_id=repo_id, backend="local")
-        elif mode == "local":  
+        elif mode == "local":
             models[model_name] = LudwigModel.load(repo_id, backend="local")
 
     # Check if models are loaded
@@ -422,14 +417,22 @@ def run_server(
 
 def cli(sys_argv):
     parser = argparse.ArgumentParser(
-        description="This script serves multiple pretrained models", prog="ludwig multi_serve", usage="%(prog)s [options]"
+        description="This script serves multiple pretrained models",
+        prog="ludwig multi_serve",
+        usage="%(prog)s [options]",
     )
 
     # ----------------
     # Model parameters
     # ----------------
     parser.add_argument("-m", "--model_paths", help="model to load", required=True)
-    parser.add_argument("-mode", "--mode", choices=["huggingface", "local"], help="Model loading mode: either fetch them from HuggingFace or locally ", required=True)
+    parser.add_argument(
+        "-mode",
+        "--mode",
+        choices=["huggingface", "local"],
+        help="Model loading mode: either fetch them from HuggingFace or locally ",
+        required=True,
+    )
 
     parser.add_argument(
         "-l",

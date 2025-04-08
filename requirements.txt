@@ -70,3 +70,7 @@ datasets
 # pin required for torch 2.1.0
 urllib3<2
 ludwig==0.10.2 # Must downgrade to 0.10.2 or it won't be able to load in dockerized environment using Ludwig's official image
+black==25.1.0
+flake8==7.2.0
+isort==6.0.1
+pre-commit==4.2.0
