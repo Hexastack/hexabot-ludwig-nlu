@@ -115,7 +115,8 @@ def download_model_from_huggingface(
                 repo_id=repo_id,
                 force_download=force_download,
                 local_dir=repo_dir,
-                repo_type="model"
+                repo_type="model",
+                local_dir_use_symlinks=False
             )
         except Exception as e:
             logging.warning(f"Failed to download the model from hugging_face: {e}")
